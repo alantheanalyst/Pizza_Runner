@@ -1,13 +1,13 @@
--- Pizza Metrics
---1 How many pizzas were ordered?
+--										Pizza Metrics
+-- Total Number of Pizzas Ordered
 select count(pizza_id) pizza_count
 from customer_orders
 
---2 How many unique customer orders were made?
+-- Unique Customer Orders
 select count(distinct order_id) order_count
 from customer_orders
 
---3 How many successful orders were delivered by each runner?
+-- Successful Orders by each Runner
 update runner_orders
 set cancellation = ''
 where cancellation in (null,'null')
@@ -17,7 +17,7 @@ from runner_orders
 where cancellation is null
 group by runner_id
 
---4 How many of each type of pizza was delivered?
+-- Total number of Vegetarian and Metalover Pizzas Delivered
 alter table pizza_names
 alter column pizza_name varchar(10)
 
@@ -30,14 +30,14 @@ on c.order_id = r.order_id
 where cancellation is null
 group by pizza_name
 
---5 How many Vegetarian and Meatlovers were ordered by each customer?
+-- Vegetarians and Meatlovers Ordered by each Customer
 select customer_id, pizza_name, count(order_id) pizza_count
 from customer_orders c
 join pizza_names n
 on c.pizza_id = n.pizza_id
 group by customer_id, pizza_name
 
---6 What was the maximum number of pizzas delivered in a single order?
+-- Total Number of Pizzas Ordered in a Single Order
 select top 1 c.order_id, count(c.order_id) pizza_count
 from customer_orders c
 join runner_orders r
@@ -47,7 +47,7 @@ group by c.order_id
 having count(c.order_id) > 1
 order by pizza_count desc
 
---7 For each customer, how many delivered pizzas had at least 1 change and how many had no changes?
+-- Delivered Pizzas Categorized by Changes and No Changes
 select customer_id,
 sum(case
 when extras is not null or exclusions is not null then 1
@@ -63,35 +63,33 @@ on c.order_id = r.order_id
 where cancellation is null
 group by customer_id
 
---8 How many pizzas were delivered that had both exclusions and extras?
+-- Pizzas Delivered with both Excluded and Extra Toppings
 select count(*) order_count
 from customer_orders c
 join runner_orders r
 on c.order_id = r.order_id
 where extras is not null and exclusions is not null and cancellation is null
 
---9 What was the total volume of pizzas ordered for each hour of the day?
+-- Total Number of Pizzas Ordered for each Hour of the Day
 select count(*) order_count, datepart(hour from order_time) hour
 from customer_orders
 group by datepart(hour from order_time) 
 order by hour
 
---10 What was the volume of orders for each day of the week?
+-- Total Number of Pizzas Ordered per Day of the Week
 select format(dateadd(day, 2, order_time), 'dddd') day_of_week, count(*) order_count
 from  customer_orders
 group by format(dateadd(day, 2, order_time), 'dddd')
 order by day_of_week desc
 
---Runner and customer experience
---1 How many runners signed up for each 1 week period?
+--										Runner and Customer Experience
+-- Runner Regristration by Week
 select count(runner_id) runner_registration, datepart(week, registration_date) registration_week
 from runners
 group by datepart(week, registration_date)
 order by registration_week
--- this was taken from https: //medium.com/analytics-vidhya/8-week-sql-challenge-case-study-2-pizza-runner-ba32f0a6f9fb
--- Most runners registed on the second week.
 
---2 What was the average time in minutes it took for each runner to arrive at the Pizza Runner HQ to pickup the order?
+--2 Average time it took each Runner to Arrive at the Pizza Runner HQ
 select [distance km]
 from runner_orders
 
@@ -148,7 +146,7 @@ join customer_orders c
 	on r.order_id = c.order_id
 group by runner_id
 
---3 Is there any relationship between the number of pizzas and how long the order takes to prepare?
+-- Relationship between the number of Pizzas in an order and the time it took to make
 select count(pizza_id) pizza_count, abs(datepart(minute from order_time) - datepart(minute from pickup_time)) time
 from customer_orders c
 join runner_orders r
@@ -157,26 +155,27 @@ where pickup_time is not null
 group by c.order_id, pizza_id, order_time, pickup_time
 order by time
 
---4 What was the average distance travelled for each customer?
-select customer_id, avg([distance km]) avg_distance
+-- Average Distance each runner Travelled for each Customer
+select runner_id, customer_id, avg([distance km]) avg_distance
 from runner_orders r
 join customer_orders c
 	on r.order_id = c.order_id
-group by customer_id
+group by runner_id, customer_id
+-- customer 101, 103, and 105 seem to be far away or make a lot of orders.
 
---5 What was the difference between the longest and shortest delivery times for all orders?
+-- Difference Between the Shortest and Longest Deliveries
 select max([duration minutes]) - min([duration minutes]) difference_between_longest_and_shortest_orders
 from runner_orders r
 join customer_orders c
 	on r.order_id = c.order_id
 
---6 What was the average speed for each runner for each delivery and do you notice any trend for these values?
+-- Runner's Average Speed per Delivery
 select runner_id, order_id, avg([distance km]/[duration minutes]) avg_speed
 from runner_orders
 where cancellation is null
 group by runner_id, order_id
 
---7 What is the successful delivery percentage for each runner?
+-- Successful Delivery % for each Runner
 select runner_id,
 round(100* sum(
 case
@@ -186,8 +185,10 @@ end)/count(*), 0) successful_orders
 from runner_orders
 group by runner_id
 
---Ingredient optimization 
---1 What are the standard ingredients for each pizza?
+-- runner 1 had an 100% successful delivery rate, runner 2 had a 75% successful delivery rate, and runner 3 had a 50% successful delivery rate.
+
+--										Ingredient optimization 
+-- Standard Ingredients for each Pizza
 select order_id, c.pizza_id, pizza_name, exclusions, extras, toppings,
 case
 	when exclusions is null and extras is null and pizza_name = 'Meatlovers' then 'Bacon, BBQ Sauce, Beef, Cheese, Chicken, Mushrooms, Pepperoni, Salami'
@@ -201,7 +202,7 @@ join customer_orders c
 join pizza_recipes r
 	on c.pizza_id = r.pizza_id
 
---2 What was the most commonly added extra?
+-- Most Commonly Added Extra Topping
 create table #temp1 (
 order_id int,
 pizza_id int,
@@ -226,7 +227,7 @@ from #temp1
 group by extras
 -- Bacon is the most commonly added extra topping.
 
---3 What was the most common exclusion?
+-- Most Common Excluded Topping
 create table #temp2 (
 order_id int,
 pizza_id int,
@@ -250,8 +251,9 @@ end topping
 from #temp2
 group by exclusions
 order by topping_count desc
+-- Cheese is the most excluded topping.
 
---4 Generate an order item for each record in the customers_orders table in the format of one of the following:
+-- Order Items
 select order_id, c.pizza_id, exclusions, extras,
 case
 	when order_id in (1, 2, 8) then 'Meat Lovers - Bacon, BBQ Sauce, Beef, Cheese, Chicken, Mushrooms, Pepperoni, Salami'
@@ -270,7 +272,7 @@ from customer_orders c
 join pizza_names n
 	on c.pizza_id = n.pizza_id
 
--- 5 Generate an alphabetically ordered comma separated ingredient list for each pizza order from the customer_orders table and add a 2x in front of any relevant ingredients
+-- Alphabetically Ordered Ingredient List
 select order_id, c.pizza_id, exclusions, extras,
 case
 	when order_id in (1, 2, 8) then 'Meat Lovers: Bacon, BBQ Sauce, Beef, Cheese, Chicken, Mushrooms, Pepperoni, Salami'
@@ -289,7 +291,7 @@ from customer_orders c
 join pizza_names n
 	on c.pizza_id = n.pizza_id
 
--- 6 What is the total quantity of each ingredient used in all delivered pizzas sorted by most frequent first?
+-- Total Quantity of each Ingredient Ordered by Frequency
 ;with ingredient_cte as ( select c.order_id, customer_id, c.pizza_id, exclusions, extras,
 case
 	when extras = '1' then 2
@@ -357,8 +359,8 @@ sum(tomatoes) tomatoes, sum(tomato_sauce) tomato_sauce
 from ingredient_cte
 -- Bacon and cheese are the most frequntley added toppings.
 
--- Pricing and Ratings
---1 If a Meat Lovers pizza costs $12 and Vegetarian costs $10 and there were no charges for changes - how much money has Pizza Runner made so far if there are no delivery fees?
+--										Pricing and Ratings
+-- Total Revenue
 select
 sum(case
 	when pizza_id = 1 then 12
@@ -368,8 +370,9 @@ from customer_orders c
 join runner_orders r
 	on c.order_id = r.order_id
 where cancellation is null
+-- Pizza runner made a total of $138
 
---2 What if there was an additional $1 charge for any pizza extras?
+-- Total Revenue when Extra Toppings are $1
 select
 sum(case
 	when pizza_id = 1 and extras is null then 12
@@ -382,19 +385,9 @@ from customer_orders c
 join runner_orders r
 	on c.order_id = r.order_id
 where cancellation is null
+-- If extra toppings cost $1 Piza runner's total revenue would have been $142
 
---3 The Pizza Runner team now wants to add an additional ratings system that allows customers to rate their runner, how would you design an additional table for this new dataset - generate a schema for this new table and insert your own data for ratings for each successful customer order between 1 to 5. 
---4 Using your newly generated table - can you join all of the information together to form a table which has the following information for successful deliveries?
---customer_id
---order_id
---runner_id
---rating
---order_time
---pickup_time
---Time between order and pickup
---Delivery duration
---Average speed
---Total number of pizzas
+-- Ratings
 select customer_id, c.order_id, runner_id,
 case
 	when [duration minutes] <= 15 then 5
@@ -411,7 +404,7 @@ join runner_orders r
 where cancellation is null
 group by customer_id, c.order_id, runner_id, order_time, pickup_time, [duration minutes]
 
---5 If a Meat Lovers pizza was $12 and Vegetarian $10 fixed prices with no cost for extras and each runner is paid $0.30 per kilometre traveled - how much money does Pizza Runner have left over after these deliveries?
+-- Total Revenue if Runners are paid $0.30 per Kilometer Travelled.
 ;with adjusted_pay_cte as (
 select sum([distance km] * .30) runner_paycheck,
 sum(case
@@ -427,9 +420,37 @@ select revenue - runner_paycheck total_pay
 from adjusted_pay_cte
 -- If runners made 0.30 per km then Pizza Runner would have $73.38 left.
 
--- Bonus: If Danny wants to expand his range of pizzas - how would this impact the existing data design? Write an INSERT statement to demonstrate what would happen if a new Supreme pizza with all the toppings was added to the Pizza Runner menu?
-insert into pizza_names values 
+-- Adding a Supreme pizza with all toppings.
+select n.pizza_id, pizza_name, toppings
+from pizza_names n
+join pizza_recipes r
+	on n.pizza_id = r.pizza_id
+
+create table #pizza_names (
+pizza_id int,
+pizza_name varchar (10)
+)
+
+insert into #pizza_names 
+select *
+from pizza_names
+
+insert into #pizza_names values 
 (3, 'Supreme')
 
-insert into pizza_recipes values 
+create table #pizza_recipes (
+pizza_id int,
+toppings text
+)
+
+insert into #pizza_recipes 
+select * 
+from pizza_recipes
+
+insert into #pizza_recipes values
 (3, '1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12')
+
+select n.pizza_id, pizza_name, toppings
+from #pizza_names n
+join #pizza_recipes r
+	on n.pizza_id = r.pizza_id
