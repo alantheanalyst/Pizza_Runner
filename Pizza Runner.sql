@@ -89,7 +89,7 @@ from runners
 group by datepart(week, registration_date)
 order by registration_week
 
---2 Average time it took each Runner to Arrive at the Pizza Runner HQ
+-- Average time it took each Runner to Arrive at the Pizza Runner HQ
 select [distance km]
 from runner_orders
 
@@ -134,7 +134,6 @@ set [duration minutes] = '10' where [duration minutes] = '10minutes'
 
 alter table runner_orders
 alter column duration int
-
 -- I changed distance to [distance km] and duration to [duration minutes]
 
 alter table runner_orders
@@ -184,7 +183,6 @@ case
 end)/count(*), 0) successful_orders
 from runner_orders
 group by runner_id
-
 -- runner 1 had an 100% successful delivery rate, runner 2 had a 75% successful delivery rate, and runner 3 had a 50% successful delivery rate.
 
 --										Ingredient optimization 
@@ -202,7 +200,7 @@ join customer_orders c
 join pizza_recipes r
 	on c.pizza_id = r.pizza_id
 
--- Most Commonly Added Extra Topping
+-- Most Added Extra Topping
 create table #temp1 (
 order_id int,
 pizza_id int,
@@ -227,7 +225,7 @@ from #temp1
 group by extras
 -- Bacon is the most commonly added extra topping.
 
--- Most Common Excluded Topping
+-- Most Excluded Topping
 create table #temp2 (
 order_id int,
 pizza_id int,
