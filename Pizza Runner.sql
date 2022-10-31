@@ -159,8 +159,9 @@ select runner_id, customer_id, avg([distance km]) avg_distance
 from runner_orders r
 join customer_orders c
 	on r.order_id = c.order_id
+where cancellation is null
 group by runner_id, customer_id
--- customer 101, 103, and 105 seem to be far away or make a lot of orders.
+
 
 -- Difference Between the Shortest and Longest Deliveries
 select max([duration minutes]) - min([duration minutes]) difference_between_longest_and_shortest_orders
@@ -173,6 +174,7 @@ select runner_id, order_id, avg([distance km]/[duration minutes]) avg_speed
 from runner_orders
 where cancellation is null
 group by runner_id, order_id
+
 
 -- Successful Delivery % for each Runner
 select runner_id,
@@ -223,7 +225,6 @@ case
 end topping
 from #temp1
 group by extras
--- Bacon is the most commonly added extra topping.
 
 -- Most Excluded Topping
 create table #temp2 (
@@ -249,7 +250,6 @@ end topping
 from #temp2
 group by exclusions
 order by topping_count desc
--- Cheese is the most excluded topping.
 
 -- Order Items
 select order_id, c.pizza_id, exclusions, extras,
@@ -355,7 +355,6 @@ select sum(bacon) bacon, sum(cheese) cheese, sum(beef) beef, sum(chicken) chicke
 sum(salami) salami, sum(bbq_sauce) bbq_sauce, sum(mushrooms) mushrooms, sum(onions) onions, sum(peppers) peppers, 
 sum(tomatoes) tomatoes, sum(tomato_sauce) tomato_sauce
 from ingredient_cte
--- Bacon and cheese are the most frequntley added toppings.
 
 --										Pricing and Ratings
 -- Total Revenue
@@ -368,7 +367,6 @@ from customer_orders c
 join runner_orders r
 	on c.order_id = r.order_id
 where cancellation is null
--- Pizza runner made a total of $138
 
 -- Total Revenue when Extra Toppings are $1
 select
@@ -383,7 +381,6 @@ from customer_orders c
 join runner_orders r
 	on c.order_id = r.order_id
 where cancellation is null
--- If extra toppings cost $1 Piza runner's total revenue would have been $142
 
 -- Ratings
 select customer_id, c.order_id, runner_id,
@@ -416,7 +413,6 @@ where cancellation is null
 )
 select revenue - runner_paycheck total_pay
 from adjusted_pay_cte
--- If runners made 0.30 per km then Pizza Runner would have $73.38 left.
 
 -- Adding a Supreme pizza with all toppings.
 select n.pizza_id, pizza_name, toppings
